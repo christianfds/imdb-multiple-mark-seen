@@ -1,7 +1,7 @@
 "use strict";
 
 const { extractTitleId } = require("./dom");
-const { watchedSet } = require("./state");
+const { watchedSet } = require("../core/state");
 const { detectWatchedInDOM, applyWatchedToCheckbox } = require("./watched");
 const { updateCounter } = require("./counter");
 

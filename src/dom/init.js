@@ -2,7 +2,7 @@
 
 const { findEpisodeContainers } = require("./dom");
 const { injectCheckbox } = require("./checkbox");
-const { injectControls } = require("./controls");
+const { injectControls } = require("../ui/controls");
 const { applyWatchedStatuses, enablePendingCheckboxes } = require("./watched");
 const { updateCounter } = require("./counter");
 

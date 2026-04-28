@@ -1,9 +1,9 @@
 "use strict";
 
-const { getSeasonCheckboxes, getSelectableCheckboxes } = require("./dom");
-const { applyWatchedToCheckbox } = require("./watched");
-const { watchedSet } = require("./state");
-const { updateCounter } = require("./counter");
+const { getSeasonCheckboxes, getSelectableCheckboxes } = require("../dom/dom");
+const { applyWatchedToCheckbox } = require("../dom/watched");
+const { watchedSet } = require("../core/state");
+const { updateCounter } = require("../dom/counter");
 const { showToast } = require("./toast");
 const { attachButtonProgress } = require("./progress");
 

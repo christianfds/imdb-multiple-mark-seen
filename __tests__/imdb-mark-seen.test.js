@@ -1,22 +1,22 @@
 "use strict";
 
-const { getCookie, randomRid, getShowId } = require("../src/utils");
-const { createApi } = require("../src/api");
+const { getCookie, randomRid, getShowId } = require("../src/core/utils");
+const { createApi } = require("../src/api/api");
 const {
   looksLikeEpisodeCard,
   extractTitleId,
   getSeasonCheckboxes,
   getSelectableCheckboxes,
-} = require("../src/dom");
+} = require("../src/dom/dom");
 const {
   detectWatchedInDOM,
   applyWatchedToCheckbox,
   applyWatchedStatuses,
   enablePendingCheckboxes,
-} = require("../src/watched");
-const { updateCounter } = require("../src/counter");
-const { attachButtonProgress } = require("../src/progress");
-const { watchedSet } = require("../src/state");
+} = require("../src/dom/watched");
+const { updateCounter } = require("../src/dom/counter");
+const { attachButtonProgress } = require("../src/ui/progress");
+const { watchedSet } = require("../src/core/state");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

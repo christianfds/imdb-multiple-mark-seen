@@ -1,6 +1,6 @@
 "use strict";
 
-const { watchedSet } = require("./state");
+const { watchedSet } = require("../core/state");
 const { getSeasonCheckboxes } = require("./dom");
 const { updateCounter } = require("./counter");
 

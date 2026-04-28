@@ -1,6 +1,6 @@
 "use strict";
 
-const { getShowId } = require("./utils");
+const { getShowId } = require("../core/utils");
 
 function getSeasonListRoot() {
   const candidates = [

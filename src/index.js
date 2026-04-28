@@ -15,9 +15,9 @@
 
 "use strict";
 
-const { injectStyles } = require("./styles");
-const { createApi } = require("./api");
-const { run, watchForNewEpisodes } = require("./init");
+const { injectStyles } = require("./ui/styles");
+const { createApi } = require("./api/api");
+const { run, watchForNewEpisodes } = require("./dom/init");
 
 // GM_xmlhttpRequest is provided by Tampermonkey at runtime via @grant.
 const api = createApi(GM_xmlhttpRequest); // eslint-disable-line no-undef

@@ -1,7 +1,7 @@
 "use strict";
 
-const { GRAPHQL_URL, ADD_MUTATION, PERSONALIZED_HASH } = require("./constants");
-const { gqlHeaders } = require("./utils");
+const { GRAPHQL_URL, ADD_MUTATION, PERSONALIZED_HASH } = require("../core/constants");
+const { gqlHeaders } = require("../core/utils");
 
 function createApi(gmXhr) {
   function markAsWatched(titleId) {
