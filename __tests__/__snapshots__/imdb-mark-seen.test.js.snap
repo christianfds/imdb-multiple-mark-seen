@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`UI Component Snapshots button progress HTML structure matches snapshot 1`] = `"<button style="color: rgb(255, 255, 255); position: relative; overflow: hidden; background: rgb(42, 42, 42);"><div style="position: absolute; top: 0px; left: 0px; height: 100%; width: 0%; background-size: 200% 100%; animation: imdb-ms-shimmer 1.4s linear infinite; transition: width .1s ease; border-radius: inherit; pointer-events: none; z-index: 0;"></div><span style="position: relative; z-index: 1;">0 / 5</span></button>"`;
+
+exports[`UI Component Snapshots checkbox label wrapper HTML matches snapshot 1`] = `"<label><input type="checkbox" data-title-id="tt1234567"><span class="imdb-ms-lbl">Mark as seen</span></label>"`;
+
+exports[`UI Component Snapshots counter badge HTML matches snapshot 1`] = `"<div id="imdb-ms-counter" style="color: rgb(245, 197, 24);">2 of 5 selected</div>"`;
+
+exports[`UI Component Snapshots loading checkbox label wrapper HTML matches snapshot 1`] = `"<label><input type="checkbox" data-title-id="tt1234567" data-loading="true" disabled=""><span class="imdb-ms-lbl">Loading…</span></label>"`;
+
+exports[`UI Component Snapshots watched checkbox label wrapper HTML matches snapshot 1`] = `"<label><input type="checkbox" data-title-id="tt1234567" data-watched="true"><span class="imdb-ms-lbl">✓ Already seen</span></label>"`;

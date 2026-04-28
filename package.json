@@ -1,0 +1,14 @@
+{
+  "name": "imdb-mark-seen",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "build": "node build.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}
