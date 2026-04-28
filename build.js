@@ -1,36 +1,29 @@
 "use strict";
 
-// Build script: strips the Node/Jest module.exports block from the source and
-// writes a clean browser-only artifact to dist/.
-//
-// When the source is split into ES modules, update this to use esbuild with
-// bundle: true so all imports are resolved into the single .user.js output.
-
+const esbuild = require("esbuild");
 const fs = require("fs");
 
-const src = fs.readFileSync("imdb-mark-seen.user.js", "utf8");
-
-// The source uses `if (typeof module !== "undefined") { exports } else { browser init }`
-// so Jest can import functions without a build step. The dist removes this
-// branching — browsers only need the else path.
-let dist = src;
-
-// Step 1: remove from the section header comment through the "} else {\n" line.
-dist = dist.replace(
-  /\n\n  \/\/ ─── Test exports[\s\S]*?\} else \{\n/,
-  "\n\n"
-);
-
-// Step 2: remove the closing `  }` of the now-gone else block that sits
-// immediately before `})();` at the end of the IIFE.
-dist = dist.replace(/\n  \}\n\}\)\(\);\n?$/, "\n})();\n");
-
-if (!dist.includes("injectStyles()") || dist.includes("module.exports")) {
-  throw new Error(
-    "Build sanity check failed — regex patterns may not match the source"
-  );
-}
+// The userscript header lives in src/index.js as a comment block.
+// esbuild strips non-legal comments, so we extract and re-inject it as a banner.
+const src = fs.readFileSync("src/index.js", "utf8");
+const headerMatch = src.match(/(\/\/ ==UserScript==[\s\S]*?\/\/ ==\/UserScript==)/);
+if (!headerMatch) throw new Error("Userscript header not found in src/index.js");
+const header = headerMatch[1];
 
 fs.mkdirSync("dist", { recursive: true });
-fs.writeFileSync("dist/imdb-mark-seen.user.js", dist);
+
+esbuild.buildSync({
+  entryPoints: ["src/index.js"],
+  bundle: true,
+  format: "iife",
+  outfile: "dist/imdb-mark-seen.user.js",
+  banner: { js: header },
+  platform: "browser",
+  // GM_xmlhttpRequest is a Tampermonkey global — do not attempt to resolve it.
+  external: [],
+  minifyWhitespace: false,
+  minifySyntax: false,
+  legalComments: "none",
+});
+
 console.log("Built dist/imdb-mark-seen.user.js");

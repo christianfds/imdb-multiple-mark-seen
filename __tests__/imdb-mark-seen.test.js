@@ -1,26 +1,22 @@
 "use strict";
 
-// GM_xmlhttpRequest must exist before the IIFE runs.
-global.GM_xmlhttpRequest = jest.fn();
-
+const { getCookie, randomRid, getShowId } = require("../src/utils");
+const { createApi } = require("../src/api");
 const {
-  getCookie,
-  randomRid,
-  getShowId,
   looksLikeEpisodeCard,
   extractTitleId,
-  detectWatchedInDOM,
   getSeasonCheckboxes,
   getSelectableCheckboxes,
+} = require("../src/dom");
+const {
+  detectWatchedInDOM,
   applyWatchedToCheckbox,
   applyWatchedStatuses,
   enablePendingCheckboxes,
-  updateCounter,
-  attachButtonProgress,
-  prefetchWatchedStatus,
-  markAsWatched,
-  watchedSet,
-} = require("../imdb-mark-seen.user.js");
+} = require("../src/watched");
+const { updateCounter } = require("../src/counter");
+const { attachButtonProgress } = require("../src/progress");
+const { watchedSet } = require("../src/state");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -360,17 +356,20 @@ describe("updateCounter", () => {
   });
 });
 
-// ─── prefetchWatchedStatus ────────────────────────────────────────────────────
+// ─── createApi — prefetchWatchedStatus ───────────────────────────────────────
 
 describe("prefetchWatchedStatus", () => {
   test("resolves to empty map when given no IDs", async () => {
+    const mockGmXhr = jest.fn();
+    const { prefetchWatchedStatus } = createApi(mockGmXhr);
+
     const result = await prefetchWatchedStatus([]);
     expect(result).toEqual({});
-    expect(GM_xmlhttpRequest).not.toHaveBeenCalled();
+    expect(mockGmXhr).not.toHaveBeenCalled();
   });
 
   test("returns a map of watched statuses from the API", async () => {
-    GM_xmlhttpRequest.mockImplementation(({ onload }) => {
+    const mockGmXhr = jest.fn(({ onload }) => {
       onload({
         status: 200,
         responseText: JSON.stringify({
@@ -383,35 +382,38 @@ describe("prefetchWatchedStatus", () => {
         }),
       });
     });
+    const { prefetchWatchedStatus } = createApi(mockGmXhr);
 
     const result = await prefetchWatchedStatus(["tt0000001", "tt0000002"]);
     expect(result).toEqual({ tt0000001: true, tt0000002: false });
   });
 
   test("resolves to empty map on invalid JSON", async () => {
-    GM_xmlhttpRequest.mockImplementation(({ onload }) => {
+    const mockGmXhr = jest.fn(({ onload }) => {
       onload({ status: 200, responseText: "not json" });
     });
+    const { prefetchWatchedStatus } = createApi(mockGmXhr);
 
     const result = await prefetchWatchedStatus(["tt0000001"]);
     expect(result).toEqual({});
   });
 
   test("resolves to empty map on network error", async () => {
-    GM_xmlhttpRequest.mockImplementation(({ onerror }) => {
+    const mockGmXhr = jest.fn(({ onerror }) => {
       onerror(new Error("Network error"));
     });
+    const { prefetchWatchedStatus } = createApi(mockGmXhr);
 
     const result = await prefetchWatchedStatus(["tt0000001"]);
     expect(result).toEqual({});
   });
 });
 
-// ─── markAsWatched ────────────────────────────────────────────────────────────
+// ─── createApi — markAsWatched ────────────────────────────────────────────────
 
 describe("markAsWatched", () => {
   test("resolves with the title ID on success", async () => {
-    GM_xmlhttpRequest.mockImplementation(({ onload }) => {
+    const mockGmXhr = jest.fn(({ onload }) => {
       onload({
         status: 200,
         responseText: JSON.stringify({
@@ -419,12 +421,13 @@ describe("markAsWatched", () => {
         }),
       });
     });
+    const { markAsWatched } = createApi(mockGmXhr);
 
     await expect(markAsWatched("tt1234567")).resolves.toBe("tt1234567");
   });
 
   test("rejects when the API returns success:false", async () => {
-    GM_xmlhttpRequest.mockImplementation(({ onload }) => {
+    const mockGmXhr = jest.fn(({ onload }) => {
       onload({
         status: 200,
         responseText: JSON.stringify({
@@ -433,14 +436,16 @@ describe("markAsWatched", () => {
         }),
       });
     });
+    const { markAsWatched } = createApi(mockGmXhr);
 
     await expect(markAsWatched("tt1234567")).rejects.toThrow("Not authorized");
   });
 
   test("rejects on network error", async () => {
-    GM_xmlhttpRequest.mockImplementation(({ onerror }) => {
+    const mockGmXhr = jest.fn(({ onerror }) => {
       onerror(new Error("Network error"));
     });
+    const { markAsWatched } = createApi(mockGmXhr);
 
     await expect(markAsWatched("tt1234567")).rejects.toThrow("Network error");
   });
@@ -479,7 +484,7 @@ describe("attachButtonProgress", () => {
     const fill = btn.querySelector("div");
 
     progress.advance(true);
-    jest.advanceTimersByTime(0); // drainNext fires immediately on first call
+    jest.advanceTimersByTime(0);
     expect(fill.style.width).toBe("25%");
 
     progress.advance(true);
@@ -502,17 +507,12 @@ describe("attachButtonProgress", () => {
     const btn = makeBtn(origText);
     const progress = attachButtonProgress(btn, 1);
 
-    // advance calls drainNext() synchronously (draining was false).
-    // drainNext processes the item (label="1 / 1") and schedules a 150ms timer, leaving draining=true.
-    // finish() sees draining=true so it stores doFinish in onDrained instead of calling it now.
     progress.advance(true);
     progress.finish(false);
 
-    // 150ms timer fires: drainNext finds empty queue → draining=false → calls doFinish
     jest.advanceTimersByTime(150);
     expect(btn.querySelector("span").textContent).toBe("✓ 1 marked");
 
-    // doFinish scheduled a 1500ms restore timer
     jest.advanceTimersByTime(1500);
     expect(btn.textContent).toBe(origText);
     expect(btn.style.background).toBe("rgb(245, 197, 24)");
@@ -523,22 +523,16 @@ describe("attachButtonProgress", () => {
     const btn = makeBtn(origText);
     const progress = attachButtonProgress(btn, 2);
 
-    // advance(1): drainNext sync → item1 processed, 150ms timer, draining=true
-    // advance(2): draining=true → queued
-    // finish: draining=true → onDrained=doFinish
     progress.advance(true);
     progress.advance(false);
     progress.finish(true);
 
-    // t=150: drainNext fires → processes item2, schedules another 150ms
     jest.advanceTimersByTime(150);
-    // t=300: drainNext fires → queue empty → calls doFinish → label="1 ok · 1 failed"
     jest.advanceTimersByTime(150);
 
     const label = btn.querySelector("span");
     expect(label.textContent).toBe("1 ok · 1 failed");
 
-    // Should NOT restore after 1500ms (failure keeps it for 3s)
     jest.advanceTimersByTime(1500);
     expect(btn.textContent).not.toBe(origText);
 
@@ -550,23 +544,16 @@ describe("attachButtonProgress", () => {
     const btn = makeBtn();
     const progress = attachButtonProgress(btn, 3);
 
-    // Simulates all 3 API calls resolving simultaneously.
-    // advance(1): drainNext sync → item1 processed (label="1/3"), 150ms timer, draining=true
-    // advance(2,3): queued because draining=true
-    // finish: draining=true → onDrained=doFinish
     progress.advance(true);
     progress.advance(true);
     progress.advance(true);
     progress.finish(false);
 
     const label = btn.querySelector("span");
-    expect(label.textContent).not.toBe("✓ 3 marked"); // still "1 / 3"
+    expect(label.textContent).not.toBe("✓ 3 marked");
 
-    // t=150: item2 processed → label="2/3", schedules 150ms
     jest.advanceTimersByTime(150);
-    // t=300: item3 processed → label="3/3", schedules 150ms
     jest.advanceTimersByTime(150);
-    // t=450: queue empty → calls doFinish → label="✓ 3 marked"
     jest.advanceTimersByTime(150);
 
     expect(label.textContent).toBe("✓ 3 marked");
@@ -584,7 +571,6 @@ describe("UI Component Snapshots", () => {
 
     attachButtonProgress(btn, 5);
 
-    // Capture HTML structure
     expect(btn.outerHTML).toMatchSnapshot();
   });
 
